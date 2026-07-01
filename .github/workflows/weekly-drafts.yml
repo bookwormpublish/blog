@@ -1,0 +1,55 @@
+name: Weekly Draft Scaffold
+
+on:
+  schedule:
+    - cron: '0 9 * * 1'   # Monday 9am UTC
+    - cron: '0 9 * * 4'   # Thursday 9am UTC
+  workflow_dispatch:        # allow manual trigger from GitHub UI
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  scaffold:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Create draft post
+        id: scaffold
+        run: |
+          FILE=$(node scripts/new-post.mjs)
+          echo "file=$FILE" >> $GITHUB_OUTPUT
+          echo "Created: $FILE"
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add src/content/blog/
+          git commit -m "chore: scaffold draft post for $(date +%Y-%m-%d)"
+          git push
+
+      - name: Create reminder issue
+        run: |
+          gh issue create \
+            --title "📝 Write this week's blog post — $(date +'%B %d, %Y')" \
+            --body "$(cat <<'EOF'
+A new draft has been scaffolded at \`${{ steps.scaffold.outputs.file }}\`.
+
+**To publish:**
+1. Pull the latest changes: \`git pull\`
+2. Open the draft file and write your post
+3. Change \`draft: true\` to \`draft: false\`
+4. Commit and push — it goes live automatically
+
+Topics to consider: tech, books, personal, business
+EOF
+)"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

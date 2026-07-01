@@ -1,0 +1,52 @@
+---
+import { getCollection } from 'astro:content';
+
+const posts = (await getCollection('blog', ({ data }) => !data.draft))
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
+  .slice(0, 5);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Blog</title>
+    <style>
+      body { font-family: Georgia, serif; max-width: 720px; margin: 0 auto; padding: 2rem 1rem; line-height: 1.7; color: #222; }
+      h1 { font-size: 2.5rem; }
+      .subtitle { color: #666; margin-bottom: 3rem; }
+      .post-list { list-style: none; padding: 0; }
+      .post-list li { margin-bottom: 2rem; border-bottom: 1px solid #eee; padding-bottom: 2rem; }
+      .post-list li:last-child { border-bottom: none; }
+      .post-date { color: #888; font-size: 0.85rem; }
+      .post-title a { font-size: 1.3rem; font-weight: bold; color: #111; text-decoration: none; }
+      .post-title a:hover { text-decoration: underline; }
+      .post-desc { color: #444; margin-top: 0.3rem; }
+      .view-all { margin-top: 2rem; }
+      .view-all a { color: #555; }
+    </style>
+  </head>
+  <body>
+    <h1>Blog</h1>
+    <p class="subtitle">Writing about tech, books, life, and business.</p>
+
+    <ul class="post-list">
+      {posts.map(post => (
+        <li>
+          <div class="post-date">
+            {post.data.pubDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+          </div>
+          <div class="post-title">
+            <a href={`/blog/${post.slug}`}>{post.data.title}</a>
+          </div>
+          {post.data.description && <p class="post-desc">{post.data.description}</p>}
+        </li>
+      ))}
+    </ul>
+
+    <div class="view-all">
+      <a href="/blog">View all posts →</a>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,44 @@
+---
+import { getCollection } from 'astro:content';
+
+const posts = (await getCollection('blog', ({ data }) => !data.draft))
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>All Posts | Blog</title>
+    <style>
+      body { font-family: Georgia, serif; max-width: 720px; margin: 0 auto; padding: 2rem 1rem; line-height: 1.7; color: #222; }
+      nav a { color: #555; text-decoration: none; margin-right: 1rem; }
+      h1 { font-size: 2rem; }
+      .post-list { list-style: none; padding: 0; }
+      .post-list li { display: flex; gap: 1.5rem; align-items: baseline; padding: 0.6rem 0; border-bottom: 1px solid #f0f0f0; }
+      .post-date { color: #888; font-size: 0.85rem; white-space: nowrap; min-width: 110px; }
+      .post-list a { color: #111; text-decoration: none; }
+      .post-list a:hover { text-decoration: underline; }
+      .category { font-size: 0.75rem; color: #999; font-family: monospace; }
+    </style>
+  </head>
+  <body>
+    <nav>
+      <a href="/">← Home</a>
+    </nav>
+    <h1>All Posts</h1>
+
+    <ul class="post-list">
+      {posts.map(post => (
+        <li>
+          <span class="post-date">
+            {post.data.pubDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+          </span>
+          <a href={`/blog/${post.slug}`}>{post.data.title}</a>
+          {post.data.category && <span class="category">[{post.data.category}]</span>}
+        </li>
+      ))}
+    </ul>
+  </body>
+</html>
