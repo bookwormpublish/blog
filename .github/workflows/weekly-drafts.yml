@@ -28,6 +28,7 @@ jobs:
           echo "Created: $FILE"
 
       - name: Commit and push
+        if: ${{ !startsWith(steps.scaffold.outputs.file, 'SKIP') }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -37,19 +38,19 @@ jobs:
 
       - name: Create reminder issue
         run: |
+          SCAFFOLD_OUT="${{ steps.scaffold.outputs.file }}"
+          if [[ "$SCAFFOLD_OUT" == SKIP* ]]; then
+            COUNT="${SCAFFOLD_OUT#SKIP:}"
+            TITLE="⚠️ Draft backlog — write before scaffolding more ($(date +'%B %d, %Y'))"
+            BODY="You have ${COUNT} unwritten drafts piling up, so no new draft was created today. Finish one of the existing drafts in \`src/content/blog/\` first."
+          else
+            TITLE="📝 Write today's blog post — $(date +'%B %d, %Y')"
+            BODY=$'A new draft is ready at `${{ steps.scaffold.outputs.file }}`.\n\n**To publish:**\n1. `git pull`\n2. Write your post in the draft file\n3. `npm run publish -- ${{ steps.scaffold.outputs.file }} "Your Title"`\n4. Commit and push — it deploys automatically'
+          fi
           gh issue create \
-            --title "📝 Write this week's blog post — $(date +'%B %d, %Y')" \
-            --body "$(cat <<'EOF'
-A new draft has been scaffolded at \`${{ steps.scaffold.outputs.file }}\`.
-
-**To publish:**
-1. Pull the latest changes: \`git pull\`
-2. Open the draft file and write your post
-3. Change \`draft: true\` to \`draft: false\`
-4. Commit and push — it goes live automatically
-
-Topics to consider: tech, books, personal, business
-EOF
-)"
+            --title "$TITLE" \
+            --body "$BODY" \
+            --assignee "$GITHUB_REPOSITORY_OWNER" \
+            --repo "$GITHUB_REPOSITORY"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
